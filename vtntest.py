@@ -42,6 +42,11 @@ async def on_create_party_registration(registration_info):
         registration_id = 'reg_id_dan_test'
         return ven_id, registration_id
 
+    if registration_info['ven_name'] == 'volttron_test':
+        ven_id = 'ven_id_volttron_test'
+        registration_id = 'reg_id_volttron_test'
+        return ven_id, registration_id
+
     else:
         return False
 
@@ -74,8 +79,9 @@ async def handle_trigger_event(request):
     """
     Handle a trigger event request.
     """
+    ven_id = request.match_info['ven_id']
     server = request.app["server"]
-    server.add_event(ven_id='ven_id_dan_test',
+    server.add_event(ven_id=str(ven_id),
         signal_name='LOAD_CONTROL',
         signal_type='x-loadControlCapacity',
         intervals=[{'dtstart': datetime.now(timezone.utc),
@@ -96,8 +102,9 @@ async def handle_cancel_event(request):
     """
     Handle a cancel event request.
     """
+    ven_id = request.match_info['ven_id']
     server = request.app["server"]
-    server.cancel_event(ven_id='ven_id_dan_test',
+    server.cancel_event(ven_id=str(ven_id),
         event_id="our-event-id",
     )
 
@@ -191,9 +198,9 @@ server.add_handler('on_register_report', on_register_report)
 
 server.app.add_routes([
     web.get('/', index_handler),
-    web.post("/transform", form_grabber),
-    web.get('/trigger-event', handle_trigger_event),
-    web.get('/cancel-event', handle_cancel_event),
+    web.post('/transform', form_grabber),
+    web.get('/trigger-event/{ven_id}', handle_trigger_event),
+    web.get('/cancel-event/{ven_id}', handle_cancel_event),
 ])
 
 
