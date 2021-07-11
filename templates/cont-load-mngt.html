@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}
+SlipstreamInc GEB
+{% endblock %}
+
+{% block content %}
+<h1>GEB Research</h1>
+<hr>
+<fieldset>
+<h2>Setpoints for continous load management</h2>
+<form method="post" action="/transform">
+	<label>Building kW Setpoint:</label>
+	<input type="number" name="setpoint" value=""required><br>
+	
+	<input type="checkbox" id="Weekdays" name="Weekdays" value="True">
+	<label for="Weekdays"> Enable On Weekdays</label><br>
+	<input type="checkbox" id="Weekends" name="Weekends" value="True">
+	<label for="Weekdays"> Enable On Weekends</label><br>
+
+
+	<label for="starttime">Choose start time for electrical load rolling:</label>
+	<input type="time" id="starttime" name="starttime"
+			min="09:00" max="21:00" required>
+	<small>Available hours to select 9am to 9pm</small>
+
+	<label for="endtime">Choose end time for electrical load rolling:</label>
+	<input type="time" id="endtime" name="endtime"
+		min="09:00" max="21:00" required>
+	<small>Available hours to select 9am to 9pm</small>
+
+</fieldset>
+	<input type="submit" value="Submit">
+</form>
+
+{% endblock %}
