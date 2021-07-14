@@ -95,23 +95,33 @@ async def handle_trigger_event(request):
     """
     try:
         ven_id = request.match_info['ven_id']
-        server = request.app["server"]
-        server.add_event(ven_id=str(ven_id),
-            signal_name='LOAD_CONTROL',
-            signal_type='x-loadControlCapacity',
-            intervals=[{'dtstart': datetime.now(timezone.utc),
-                        'duration': timedelta(minutes=10),
-                        'signal_payload': 1.0}],
-            callback=event_response_callback,
-            event_id="our-event-id",
-        )
 
-        tz_Chicago = pytz.timezone('America/Chicago') 
-        datetime_Chicago = datetime.now(tz_Chicago)
-        datetime_Chicago_formated = datetime_Chicago.strftime("%H:%M:%S")
-        data = f"Event added now at Chicago time:, {datetime_Chicago_formated}"
-        response_obj = { 'status' : 'success', 'info' : data }
-        return web.json_response(response_obj)
+        # look up function to see if this VEN exists
+        if find_ven(ven_id):
+
+            print("HANDLE TRIGGER EVENT find_ven(ven_id) ", find_ven(ven_id))
+
+            server = request.app["server"]
+            server.add_event(ven_id=str(ven_id),
+                signal_name='LOAD_CONTROL',
+                signal_type='x-loadControlCapacity',
+                intervals=[{'dtstart': datetime.now(timezone.utc),
+                            'duration': timedelta(minutes=10),
+                            'signal_payload': 1.0}],
+                callback=event_response_callback,
+                event_id="our-event-id",
+            )
+
+            tz_Chicago = pytz.timezone('America/Chicago') 
+            datetime_Chicago = datetime.now(tz_Chicago)
+            datetime_Chicago_formated = datetime_Chicago.strftime("%H:%M:%S")
+            data = f"Event added now at Chicago time:, {datetime_Chicago_formated}"
+            response_obj = { 'status' : 'success', 'info' : data }
+            return web.json_response(response_obj)
+
+        else:
+            response_obj = { 'status' : 'failed', 'reason' : 'bad ven name' }
+            return web.json_response(response_obj, status=404)
 
     except Exception as e:
         ## Bad path where name is not set
@@ -126,17 +136,28 @@ async def handle_cancel_event(request):
     """
     try:
         ven_id = request.match_info['ven_id']
-        server = request.app["server"]
-        server.cancel_event(ven_id=str(ven_id),
-            event_id="our-event-id",
-        )
 
-        tz_Chicago = pytz.timezone('America/Chicago') 
-        datetime_Chicago = datetime.now(tz_Chicago)
-        datetime_Chicago_formated = datetime_Chicago.strftime("%H:%M:%S")
-        data = f"Event canceled now at Chicago time:, {datetime_Chicago_formated}"
-        response_obj = { 'status' : 'success', 'info' : data }
-        return web.json_response(response_obj)
+        # look up function to see if this VEN exists
+        if find_ven(ven_id):
+
+            print("HANDLE CANCEL EVENT find_ven(ven_id) ", find_ven(ven_id))
+
+
+            server = request.app["server"]
+            server.cancel_event(ven_id=str(ven_id),
+                event_id="our-event-id",
+            )
+
+            tz_Chicago = pytz.timezone('America/Chicago') 
+            datetime_Chicago = datetime.now(tz_Chicago)
+            datetime_Chicago_formated = datetime_Chicago.strftime("%H:%M:%S")
+            data = f"Event canceled now at Chicago time:, {datetime_Chicago_formated}"
+            response_obj = { 'status' : 'success', 'info' : data }
+            return web.json_response(response_obj)
+
+        else:
+            response_obj = { 'status' : 'failed', 'reason' : 'bad ven name' }
+            return web.json_response(response_obj, status=404)
 
     except Exception as e:
         ## Bad path where name is not set
@@ -146,7 +167,7 @@ async def handle_cancel_event(request):
 
 
 '''
-APP HOMEPAGE
+APP SPLASH PAGE TO ENTER DATE TIME FOR DR EVENT
 '''
 
 @aiohttp_jinja2.template("index.html")
@@ -183,7 +204,7 @@ async def form_grabber(request: web.Request) -> web.Response:
         # look up function to see if this VEN exists
         if find_ven(ven_id):
 
-            print("find_ven(ven_id) ",find_ven(ven_id))
+            print("FORM GRABBER find_ven(ven_id) ",find_ven(ven_id))
 
             event_start = data['Event-Start'] + sec_microsec_adder
             print("Event-Start is ",event_start)
@@ -223,7 +244,7 @@ async def form_grabber(request: web.Request) -> web.Response:
 
         else:
             response_obj = { 'status' : 'failed', 'reason' : 'bad ven name' }
-            return web.json_response(response_obj, status=500)
+            return web.json_response(response_obj, status=404)
 
 
     except Exception as e:
