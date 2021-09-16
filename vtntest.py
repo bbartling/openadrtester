@@ -11,6 +11,7 @@ import logging
 import os
 
 enable_default_logging(logging.DEBUG)
+
 #enable_default_logging()
 
 
@@ -101,6 +102,12 @@ async def handle_trigger_event(request):
 
             print("HANDLE TRIGGER EVENT find_ven(ven_id) ", find_ven(ven_id))
 
+            tz_Chicago = pytz.timezone('America/Chicago') 
+            datetime_Chicago = datetime.now(tz_Chicago)
+            datetime_Chicago_formated = datetime_Chicago.strftime("%d/%m/%Y %H:%M:%S")
+            info = f"Event ID is :, {datetime_Chicago_formated}"
+            print(info)
+
             server = request.app["server"]
             server.add_event(ven_id=str(ven_id),
                 signal_name='LOAD_CONTROL',
@@ -109,14 +116,11 @@ async def handle_trigger_event(request):
                             'duration': timedelta(minutes=10),
                             'signal_payload': 1.0}],
                 callback=event_response_callback,
-                event_id="our-event-id",
+                event_id=dt_string,
             )
 
-            tz_Chicago = pytz.timezone('America/Chicago') 
-            datetime_Chicago = datetime.now(tz_Chicago)
-            datetime_Chicago_formated = datetime_Chicago.strftime("%H:%M:%S")
-            data = f"Event added now at Chicago time:, {datetime_Chicago_formated}"
-            response_obj = { 'status' : 'success', 'info' : data }
+
+            response_obj = { 'status' : 'success', 'info' : info }
             return web.json_response(response_obj)
 
         else:
@@ -151,8 +155,8 @@ async def handle_cancel_event(request):
             tz_Chicago = pytz.timezone('America/Chicago') 
             datetime_Chicago = datetime.now(tz_Chicago)
             datetime_Chicago_formated = datetime_Chicago.strftime("%H:%M:%S")
-            data = f"Event canceled now at Chicago time:, {datetime_Chicago_formated}"
-            response_obj = { 'status' : 'success', 'info' : data }
+            info = f"Event canceled now at Chicago time:, {datetime_Chicago_formated}"
+            response_obj = { 'status' : 'success', 'info' : info }
             return web.json_response(response_obj)
 
         else:
@@ -222,7 +226,8 @@ async def form_grabber(request: web.Request) -> web.Response:
             event_start_utc, offset = convert_to_utc(time_only, 'America/Chicago', date_only)
             print("Event-Start-UTC is ",event_start_utc)
 
-            print(f"open ADR event will be {event_start_formatted_local_tz} local tz for {minutes} minutes")
+            info = f"The open ADR event ID is {event_start_formatted_local_tz} local tz for {minutes} minutes"
+            print(info)
             print(f"open ADR event will be {event_start_utc} UTC tz for {minutes} minutes")
 
             """
@@ -239,7 +244,7 @@ async def form_grabber(request: web.Request) -> web.Response:
                 event_id="our-event-id",
             )
 
-            response_obj = { 'status' : 'success', 'info' : data }
+            response_obj = { 'status' : 'success', 'info' : info }
             return web.json_response(response_obj)
 
         else:
