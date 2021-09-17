@@ -26,6 +26,14 @@ def convert_to_utc(time, tzname, date=None, is_dst=None):
     return dt.astimezone(pytz.utc), dt.utcoffset().total_seconds()
 
 
+event_id_storage = []
+def store_event_id (data):
+    event_id_storage.append(data)
+    print("event_id_storage is ",event_id_storage)
+
+
+def view_store_event_id():
+    print("event_id_storage is ",event_id_storage)
 
 
 # Future db
@@ -90,48 +98,6 @@ async def event_response_callback(ven_id, event_id, opt_type):
     print(f"VEN {ven_id} responded to Event {event_id} with: {opt_type}")
 
 
-async def handle_trigger_event(request):
-    """
-    Handle a trigger event request.
-    """
-    try:
-        ven_id = request.match_info['ven_id']
-
-        # look up function to see if this VEN exists
-        if find_ven(ven_id):
-
-            print("HANDLE TRIGGER EVENT find_ven(ven_id) ", find_ven(ven_id))
-
-            tz_Chicago = pytz.timezone('America/Chicago') 
-            datetime_Chicago = datetime.now(tz_Chicago)
-            datetime_Chicago_formated = datetime_Chicago.strftime("%d/%m/%Y %H:%M:%S")
-            info = f"Event ID is :, {datetime_Chicago_formated}"
-            print(info)
-
-            server = request.app["server"]
-            server.add_event(ven_id=str(ven_id),
-                signal_name='LOAD_CONTROL',
-                signal_type='x-loadControlCapacity',
-                intervals=[{'dtstart': datetime.now(timezone.utc),
-                            'duration': timedelta(minutes=10),
-                            'signal_payload': 1.0}],
-                callback=event_response_callback,
-                event_id=dt_string,
-            )
-
-
-            response_obj = { 'status' : 'success', 'info' : info }
-            return web.json_response(response_obj)
-
-        else:
-            response_obj = { 'status' : 'failed', 'reason' : 'bad ven name' }
-            return web.json_response(response_obj, status=404)
-
-    except Exception as e:
-        ## Bad path where name is not set
-        response_obj = { 'status' : 'failed', 'reason': str(e) }
-        ## return failed with a status code of 500 i.e. 'Server Error'
-        return web.json_response(response_obj, status=500)
 
 
 async def handle_cancel_event(request):
@@ -140,6 +106,7 @@ async def handle_cancel_event(request):
     """
     try:
         ven_id = request.match_info['ven_id']
+        print(request)
 
         # look up function to see if this VEN exists
         if find_ven(ven_id):
@@ -160,12 +127,12 @@ async def handle_cancel_event(request):
             return web.json_response(response_obj)
 
         else:
-            response_obj = { 'status' : 'failed', 'reason' : 'bad ven name' }
+            response_obj = { 'status' : 'failed', 'info' : 'bad ven name' }
             return web.json_response(response_obj, status=404)
 
     except Exception as e:
         ## Bad path where name is not set
-        response_obj = { 'status' : 'failed', 'reason': str(e) }
+        response_obj = { 'status' : 'failed', 'info': str(e) }
         ## return failed with a status code of 500 i.e. 'Server Error'
         return web.json_response(response_obj, status=500)
 
@@ -176,13 +143,18 @@ APP SPLASH PAGE TO ENTER DATE TIME FOR DR EVENT
 
 @aiohttp_jinja2.template("index.html")
 async def index_handler(request):
+    print("index_handler hit",time.ctime())
     return {}
 
 
-async def form_grabber(request: web.Request) -> web.Response:
+async def all_event_info(request):
+    print("all_event_info hit",time.ctime())
+    return web.json_response(event_id_storage)
 
+
+
+async def handle_trigger_event(request: web.Request) -> web.Response:
     try:
-        #db = request.config_dict["DB"]
         post = await request.post()
         print("FORM GRABBER ", post)
 
@@ -208,27 +180,23 @@ async def form_grabber(request: web.Request) -> web.Response:
         # look up function to see if this VEN exists
         if find_ven(ven_id):
 
-            print("FORM GRABBER find_ven(ven_id) ",find_ven(ven_id))
-
             event_start = data['Event-Start'] + sec_microsec_adder
-            print("Event-Start is ",event_start)
 
             f = "%Y-%m-%dT%H:%M:%S:%f"
             event_start_formatted = datetime.strptime(event_start, f)
-            print("event_start_formatted is ",event_start_formatted)
             event_start_formatted_local_tz = pytz.utc.localize(event_start_formatted)
-            print("event_start_formatted_local_tz is ",event_start_formatted_local_tz)
 
             time_only = event_start_formatted_local_tz.time()
-            print("time_only is ",time_only)
             date_only = event_start_formatted_local_tz.date()
-            print("date_only is ",date_only)
             event_start_utc, offset = convert_to_utc(time_only, 'America/Chicago', date_only)
-            print("Event-Start-UTC is ",event_start_utc)
 
-            info = f"The open ADR event ID is {event_start_formatted_local_tz} local tz for {minutes} minutes"
+            event_id_for_storage = str(event_start_formatted_local_tz)
+
+            info = f"The open ADR event ID is {event_id_for_storage}. Event duration set for {minutes} minutes"
             print(info)
-            print(f"open ADR event will be {event_start_utc} UTC tz for {minutes} minutes")
+
+            #store event ID and VEN ID
+            store_event_id({"ven_id":ven_id, "event_id":event_id_for_storage})
 
             """
             Handle a trigger event request with openleadr.
@@ -241,20 +209,20 @@ async def form_grabber(request: web.Request) -> web.Response:
                             'duration': timedelta(minutes=minutes),
                             'signal_payload': 1.0}],
                 callback=event_response_callback,
-                event_id="our-event-id",
+                event_id=event_start_formatted_local_tz,
             )
 
             response_obj = { 'status' : 'success', 'info' : info }
             return web.json_response(response_obj)
 
         else:
-            response_obj = { 'status' : 'failed', 'reason' : 'bad ven name' }
+            response_obj = { 'status' : 'failed', 'info' : 'bad ven name' }
             return web.json_response(response_obj, status=404)
 
 
     except Exception as e:
         ## Bad path where name is not set
-        response_obj = { 'status' : 'failed', 'reason': str(e) }
+        response_obj = { 'status' : 'failed', 'info': str(e) }
         ## return failed with a status code of 500 i.e. 'Server Error'
         return web.json_response(response_obj, status=500)
 
@@ -279,9 +247,9 @@ server.add_handler('on_register_report', on_register_report)
 
 server.app.add_routes([
     web.get('/', index_handler),
-    web.post('/transform', form_grabber),
-    web.get('/trigger-event/{ven_id}', handle_trigger_event),
-    web.get('/cancel-event/{ven_id}', handle_cancel_event),
+    web.post('/trigger', handle_trigger_event),
+    web.post('/cancel', handle_cancel_event),
+    web.get('/event-info', all_event_info)
 ])
 
 
@@ -294,3 +262,10 @@ aiohttp_jinja2.setup(
 loop = asyncio.get_event_loop()
 loop.create_task(server.run())
 loop.run_forever()
+
+
+
+'''
+    web.get('/trigger-event/{ven_id}', handle_trigger_event),
+    web.get('/cancel-event/{ven_id}', handle_cancel_event),
+'''

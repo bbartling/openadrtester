@@ -4,29 +4,45 @@ SlipstreamInc GEB
 {% endblock %}
 
 {% block content %}
+<head>
+	<style>
+	fieldset {
+	width: fit-content;
+	}
+	</style>
+</head>
+
 <h1>GEB Research</h1>
 <hr>
-<fieldset>
-<h2>Create Open ADR Event</h2>
-<form method="post" action="/transform">
-	<label>VEN ID:</label>
-	<input type="text" name="VEN ID" value=""required><br>
-	
-	<label>Open ADR Payload Signal:</label>
-	<input type="number" name="Payload Signal" value=""required><br>
+<form method="post" action="/trigger">
+  <fieldset>
+    <table>
 
-	<label for="starttime">Choose start date and time for event:</label>
-	<input type="datetime-local" id="meeting-time"
-	name="Event-Start" value="2020-07-12T19:30"
-	min="2020-06-07T00:00" max="2024-06-14T00:00" required><br>
+      <tr>
+        <h2>Create Open ADR Event</h2>
+      </tr>
 
-	<label>Event Duration in Minutes:</label>
-	<input type="number" name="Minutes" value=""
-	min="30" max="720" required><br>
-	<small>Minimun requirement of 30 and maximum of 720 Minutes</small>
+      <tr>
+        <label>VEN ID: </label>
+        <input type="text" name="VEN ID" value="" required><br>
+        <tr>
+          <label>Open ADR Payload Simple Signal: </label>
+          <input type="number" name="Payload Signal" value="" required><br>
+        </tr>
 
-</fieldset>
-	<input type="submit" value="Submit">
+        <tr>
+          <label for="starttime">Choose start date and time for event: </label>
+          <input type="datetime-local" id="meeting-time" name="Event-Start" value="2020-07-12T19:30" min="2020-06-07T00:00" max="2024-06-14T00:00" required><br>
+        </tr>
+
+        <tr>
+          <label>Event Duration in Minutes: </label>
+          <input type="number" name="Minutes" value="" min="30" max="720" required><br>
+          <small>Minimun requirement of 30 and maximum of 720 Minutes</small>
+        </tr>
+    </table>
+  </fieldset>
+  <input type="submit" value="Submit">
 </form>
 
 {% endblock %}

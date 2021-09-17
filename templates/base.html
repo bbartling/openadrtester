@@ -1,13 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>
-    {% block title %}
-      Index
+    {% block head %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="Open ADR Testing Server">
+    <meta name="author" content="Ben Bartling">
+  
+    <title>{% block title %}{% endblock %} Open ADR Tester</title>
+  
+  
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!-- Font Awesome JS -->
+    <script src="https://kit.fontawesome.com/dd96d65c31.js" crossorigin="anonymous"></script>
+  
     {% endblock %}
-    </title>
   </head>
   <body>
     <div id="content"> {% block content %} {% endblock %} </div>
   </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
