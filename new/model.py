@@ -2,16 +2,19 @@ from pydantic import BaseModel
 from typing import List
 
 
-class Friend(BaseModel):
-    name: str
-    age: int
+class Utility_Provder_Info(BaseModel):
+    street_address: str
+    city: str
+    state: str
+    utility_id: int
 
 
-class Pet(BaseModel):
-    id: int
-    name: str
-    age: int
-    friends: Friend
+class Ven(BaseModel):
+    ven_name: str
+    ven_id: str
+    registration_id: str
+    utility_provder_info: Utility_Provder_Info
+
 
 
 class Error(BaseModel):
@@ -26,30 +29,30 @@ class Model:
 
     class NotFound(KeyError):
         """
-        Raised when a pet is not found.
+        Raised when a ven is not found.
         """
 
     def __init__(self):
         self.storage = {}
 
-    def add_pet(self, pet: Pet):
-        self.storage[pet.id] = pet
+    def add_ven(self, ven: Ven):
+        self.storage[ven.ven_name] = ven
 
-    def remove_pet(self, id: int):
+    def remove_ven(self, ven_name: str):
         try:
-            del self.storage[id]
+            del self.storage[ven_name]
         except KeyError as error:
             raise self.NotFound(str(error))
 
-    def update_pet(self, id: int, pet: Pet):
-        self.remove_pet(id)
-        self.add_pet(pet)
+    def update_ven(self, ven_name: str, ven: Ven):
+        self.remove_ven(ven_name)
+        self.add_ven(ven)
 
-    def find_pet(self, id: int):
+    def find_ven(self, ven_name: str):
         try:
-            return self.storage[id]
+            return self.storage[ven_name]
         except KeyError as error:
             raise self.NotFound(str(error))
 
-    def list_pets(self):
+    def list_vens(self):
         return list(self.storage.values())

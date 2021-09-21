@@ -3,23 +3,23 @@ from aiohttp import web
 from aiohttp_pydantic import oas
 
 from model import Model
-from view import PetCollectionView, PetItemView
+from view import VenCollectionView, VenItemView
 
 
 @middleware
-async def pet_not_found_to_404(request, handler):
+async def ven_not_found_to_404(request, handler):
     try:
         return await handler(request)
     except Model.NotFound as key:
-        return json_response({"error": f"Pet {key} does not exist"}, status=404)
+        return json_response({"error": f"Ven {key} does not exist"}, status=404)
 
 
-app = Application(middlewares=[pet_not_found_to_404])
-oas.setup(app, version_spec="1.0.1", title_spec="My App")
+app = Application(middlewares=[ven_not_found_to_404])
+oas.setup(app, version_spec="1.0.1", title_spec="Open ADR VTN Server")
 
 app["model"] = Model()
-app.router.add_view("/pets", PetCollectionView)
-app.router.add_view("/pets/{id}", PetItemView)
+app.router.add_view("/vens", VenCollectionView)
+app.router.add_view("/vens/{ven_name}", VenItemView)
 
 
 web.run_app(app)

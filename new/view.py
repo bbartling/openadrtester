@@ -5,59 +5,59 @@ from aiohttp import web
 from aiohttp_pydantic import PydanticView
 from aiohttp_pydantic.oas.typing import r200, r201, r204, r404
 
-from model import Error, Pet
+from model import Error, Ven
 
 
-class PetCollectionView(PydanticView):
-    async def get(self, age: Optional[int] = None) -> r200[List[Pet]]:
+class VenCollectionView(PydanticView):
+    async def get(self, age: Optional[str] = None) -> r200[List[Ven]]:
         """
-        List all pets
+        List all vens
 
         Status Codes:
             200: Successful operation
         """
-        pets = self.request.app["model"].list_pets()
+        vens = self.request.app["model"].list_vens()
         return web.json_response(
-            [pet.dict() for pet in pets if age is None or age == pet.age]
+            [ven.dict() for ven in vens if age is None or age == ven.age]
         )
 
-    async def post(self, pet: Pet) -> r201[Pet]:
+    async def post(self, ven: Ven) -> r201[Ven]:
         """
-        Add a new pet to the store
+        Add a new ven to the store
 
         Status Codes:
             201: Successful operation
         """
-        self.request.app["model"].add_pet(pet)
-        return web.json_response(pet.dict())
+        self.request.app["model"].add_ven(ven)
+        return web.json_response(ven.dict())
 
 
-class PetItemView(PydanticView):
-    async def get(self, id: int, /) -> Union[r200[Pet], r404[Error]]:
+class VenItemView(PydanticView):
+    async def get(self, ven_name: str, /) -> Union[r200[Ven], r404[Error]]:
         """
-        Find a pet by ID
+        Find a ven by ID
 
         Status Codes:
             200: Successful operation
-            404: Pet not found
+            404: Ven not found
         """
-        pet = self.request.app["model"].find_pet(id)
-        return web.json_response(pet.dict())
+        ven = self.request.app["model"].find_ven(ven_name)
+        return web.json_response(ven.dict())
 
-    async def put(self, id: int, /, pet: Pet) -> r200[Pet]:
+    async def put(self, ven_name: str, /, ven: Ven) -> r200[Ven]:
         """
         Update an existing object
 
         Status Codes:
             200: Successful operation
-            404: Pet not found
+            404: Ven not found
         """
-        self.request.app["model"].update_pet(id, pet)
-        return web.json_response(pet.dict())
+        self.request.app["model"].update_ven(ven_name, ven)
+        return web.json_response(ven.dict())
 
-    async def delete(self, id: int, /) -> r204:
+    async def delete(self, ven_name: str, /) -> r204:
         """
-        Deletes a pet
+        Deletes a ven
         """
-        self.request.app["model"].remove_pet(id)
+        self.request.app["model"].remove_ven(ven_name)
         return web.Response(status=204)
