@@ -6,7 +6,7 @@ class Utility_Provider(BaseModel):
     street_address: str
     city: str
     state: str
-    id: int
+    utility_provider_id: str
 
 
 class Ven(BaseModel):
@@ -38,17 +38,17 @@ class Model:
     def add_ven(self, ven: Ven):
         self.storage[ven.id] = ven
 
-    def remove_ven(self, id: int):
+    def remove_ven(self, id: str):
         try:
             del self.storage[id]
         except KeyError as error:
             raise self.NotFound(str(error))
 
-    def update_ven(self, id: int, ven: Ven):
+    def update_ven(self, id: str, ven: Ven):
         self.remove_ven(id)
         self.add_ven(ven)
 
-    def find_ven(self, id: int):
+    def find_ven(self, id: str):
         try:
             return self.storage[id]
         except KeyError as error:

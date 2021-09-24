@@ -9,7 +9,7 @@ from model import Error, Ven
 
 
 class VenCollectionView(PydanticView):
-    async def get(self, age: Optional[int] = None) -> r200[List[Ven]]:
+    async def get(self, id: Optional[int] = None) -> r200[List[Ven]]:
         """
         List all vens
 
@@ -18,7 +18,7 @@ class VenCollectionView(PydanticView):
         """
         vens = self.request.app["model"].list_vens()
         return web.json_response(
-            [ven.dict() for ven in vens if age is None or age == ven.age]
+            [ven.dict() for ven in vens if id is None or id == ven.id]
         )
 
     async def post(self, ven: Ven) -> r201[Ven]:
@@ -33,7 +33,7 @@ class VenCollectionView(PydanticView):
 
 
 class VenItemView(PydanticView):
-    async def get(self, id: int, /) -> Union[r200[Ven], r404[Error]]:
+    async def get(self, id: str, /) -> Union[r200[Ven], r404[Error]]:
         """
         Find a ven by ID
 
@@ -44,7 +44,7 @@ class VenItemView(PydanticView):
         ven = self.request.app["model"].find_ven(id)
         return web.json_response(ven.dict())
 
-    async def put(self, id: int, /, ven: Ven) -> r200[Ven]:
+    async def put(self, id: str, /, ven: Ven) -> r200[Ven]:
         """
         Update an existing object
 
@@ -55,7 +55,7 @@ class VenItemView(PydanticView):
         self.request.app["model"].update_ven(id, ven)
         return web.json_response(ven.dict())
 
-    async def delete(self, id: int, /) -> r204:
+    async def delete(self, id: str, /) -> r204:
         """
         Deletes a ven
         """
