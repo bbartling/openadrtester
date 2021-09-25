@@ -8,6 +8,7 @@ from aiohttp_pydantic.oas.typing import r200, r201, r204, r404
 from model import Error, Ven
 
 
+
 class VenCollectionView(PydanticView):
     async def get(self, id: Optional[int] = None) -> r200[List[Ven]]:
         """

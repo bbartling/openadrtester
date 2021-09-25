@@ -5,14 +5,16 @@ from openleadr import OpenADRServer, enable_default_logging
 from functools import partial
 import time
 from aiohttp import web
-import jinja2
-import aiohttp_jinja2
+
 import logging
 import os
 
 enable_default_logging(logging.DEBUG)
 
 #enable_default_logging()
+
+
+tz_local = pytz.timezone('America/Chicago')
 
 
 
@@ -26,19 +28,12 @@ def convert_to_utc(time, tzname, date=None, is_dst=None):
     return dt.astimezone(pytz.utc), dt.utcoffset().total_seconds()
 
 
-event_id_storage = []
-def store_event_id (data):
-    event_id_storage.append(data)
-    print("event_id_storage is ",event_id_storage)
 
-
-def view_store_event_id():
-    print("event_id_storage is ",event_id_storage)
 
 
 # Future db
 VENS = {
-    "dan_test": {"ven_name": "dan_test", "ven_id": "ven_id_dan_test", "registration_id": "reg_id_dan_test"},
+    "ben_house": {"ven_name": "ben_house", "ven_id": "ven_id_ben_house", "registration_id": "reg_id_ben_house"},
     "slipstream_ven1": {"ven_name": "slipstream_ven1", "ven_id": "ven_id_slipstream_ven1", "registration_id": "reg_id_slipstream_ven1"},
     "volttron_test": {"ven_name": "volttron_test", "ven_id": "ven_id_volttron_test", "registration_id": "reg_id_volttron_test"}     
 }
@@ -105,120 +100,74 @@ async def handle_cancel_event(request):
     Handle a cancel event request.
     """
     try:
-        ven_id = request.match_info['ven_id']
-        print(request)
-
-        # look up function to see if this VEN exists
-        if find_ven(ven_id):
-
-            print("HANDLE CANCEL EVENT find_ven(ven_id) ", find_ven(ven_id))
+        server = request.app["server"]
+        server.cancel_event(ven_id='ven_id_dan_test',
+            event_id="our-event-id",
+        )
 
 
-            server = request.app["server"]
-            server.cancel_event(ven_id=str(ven_id),
-                event_id="our-event-id",
-            )
-
-            tz_Chicago = pytz.timezone('America/Chicago') 
-            datetime_Chicago = datetime.now(tz_Chicago)
-            datetime_Chicago_formated = datetime_Chicago.strftime("%H:%M:%S")
-            info = f"Event canceled now at Chicago time:, {datetime_Chicago_formated}"
-            response_obj = { 'status' : 'success', 'info' : info }
-            return web.json_response(response_obj)
-
-        else:
-            response_obj = { 'status' : 'failed', 'info' : 'bad ven name' }
-            return web.json_response(response_obj, status=404)
+        datetime_local = datetime.now(tz_local)
+        datetime_local_formated = datetime_local.strftime("%H:%M:%S")     
+        info = f"Event canceled now, local time: {datetime_local_formated}"
+        response_obj = { 'status' : 'success', 'info': info }
+        
+        ## return sucess
+        return web.json_response(response_obj)
 
     except Exception as e:
-        ## Bad path where name is not set
+
+        response_obj = { 'status' : 'failed', 'info': str(e) }
+        
+        ## return failed with a status code of 500 i.e. 'Server Error'
+        return web.json_response(response_obj, status=500)
+
+
+
+
+async def handle_trigger_event(request):
+    """
+    Handle a trigger event request.
+    """
+    try:
+        duration = request.match_info['minutes_duration']
+        
+        server = request.app["server"]
+        server.add_event(ven_id='ven_id_dan_test',
+            signal_name='LOAD_CONTROL',
+            signal_type='x-loadControlCapacity',
+            intervals=[{'dtstart': datetime.now(timezone.utc),
+                        'duration': timedelta(minutes=int(duration)),
+                        'signal_payload': 1.0}],
+            callback=event_response_callback,
+            event_id="our-event-id",
+        )
+
+        datetime_local = datetime.now(tz_local)
+        datetime_local_formated = datetime_local.strftime("%H:%M:%S")     
+        info = f"Event added now, local time: {datetime_local_formated}"
+        response_obj = { 'status' : 'success', 'info': info }
+        
+        ## return sucess
+        return web.json_response(response_obj)
+        
+
+    except Exception as e:
+
         response_obj = { 'status' : 'failed', 'info': str(e) }
         ## return failed with a status code of 500 i.e. 'Server Error'
         return web.json_response(response_obj, status=500)
 
 
-'''
-APP SPLASH PAGE TO ENTER DATE TIME FOR DR EVENT
-'''
-
-@aiohttp_jinja2.template("index.html")
-async def index_handler(request):
-    print("index_handler hit",time.ctime())
-    return {}
 
 
-async def all_event_info(request):
-    print("all_event_info hit",time.ctime())
-    return web.json_response(event_id_storage)
-
-
-
-async def handle_trigger_event(request: web.Request) -> web.Response:
+async def all_ven_info(request):
+    """
+    Handle a trigger event request.
+    """
     try:
-        post = await request.post()
-        print("FORM GRABBER ", post)
 
-        stamp = time.time()
-        Date = datetime.fromtimestamp(stamp)
-        sec_microsec_adder = ':0:0'
-        sec_adder = ':0'
-
-        # convert multidict to dict
-        data = {}
-        for k in set(post.keys()):
-            k_values = post.getall(k)
-            if len(k_values) > 1:
-                data[k] = k_values
-            else:
-                data[k] = k_values[0]
-
-        ven_id = data['VEN ID']
-        print("FORM GRABBER VEN_ID", ven_id)
-
-        minutes = int(data['Minutes'])
-
-        # look up function to see if this VEN exists
-        if find_ven(ven_id):
-
-            event_start = data['Event-Start'] + sec_microsec_adder
-
-            f = "%Y-%m-%dT%H:%M:%S:%f"
-            event_start_formatted = datetime.strptime(event_start, f)
-            event_start_formatted_local_tz = pytz.utc.localize(event_start_formatted)
-
-            time_only = event_start_formatted_local_tz.time()
-            date_only = event_start_formatted_local_tz.date()
-            event_start_utc, offset = convert_to_utc(time_only, 'America/Chicago', date_only)
-
-            event_id_for_storage = str(event_start_formatted_local_tz)
-
-            info = f"The open ADR event ID is {event_id_for_storage}. Event duration set for {minutes} minutes"
-            print(info)
-
-            #store event ID and VEN ID
-            store_event_id({"ven_id":ven_id, "event_id":event_id_for_storage})
-
-            """
-            Handle a trigger event request with openleadr.
-            """
-            server = request.app["server"]
-            server.add_event(ven_id=ven_id,
-                signal_name='LOAD_CONTROL',
-                signal_type='x-loadControlCapacity',
-                intervals=[{'dtstart': event_start_utc,
-                            'duration': timedelta(minutes=minutes),
-                            'signal_payload': 1.0}],
-                callback=event_response_callback,
-                event_id=event_start_formatted_local_tz,
-            )
-
-            response_obj = { 'status' : 'success', 'info' : info }
-            return web.json_response(response_obj)
-
-        else:
-            response_obj = { 'status' : 'failed', 'info' : 'bad ven name' }
-            return web.json_response(response_obj, status=404)
-
+        return web.json_response(VENS)
+        
 
     except Exception as e:
         ## Bad path where name is not set
@@ -246,16 +195,11 @@ server.add_handler('on_create_party_registration', on_create_party_registration)
 server.add_handler('on_register_report', on_register_report)
 
 server.app.add_routes([
-    web.get('/', index_handler),
-    web.post('/trigger', handle_trigger_event),
-    web.post('/cancel', handle_cancel_event),
-    web.get('/event-info', all_event_info)
+    web.get('/trigger/{minutes_duration}', handle_trigger_event),
+    web.get('/cancel', handle_cancel_event),
+    web.get('/vens', all_ven_info)
 ])
 
-
-aiohttp_jinja2.setup(
-    server.app, loader=jinja2.FileSystemLoader(os.path.join(os.getcwd(), "templates"))
-)
 
 
 # Run the server on the asyncio event loop
@@ -265,7 +209,4 @@ loop.run_forever()
 
 
 
-'''
-    web.get('/trigger-event/{ven_id}', handle_trigger_event),
-    web.get('/cancel-event/{ven_id}', handle_cancel_event),
-'''
+

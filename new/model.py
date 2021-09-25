@@ -48,6 +48,7 @@ class Model:
         self.remove_ven(id)
         self.add_ven(ven)
 
+
     def find_ven(self, id: str):
         try:
             return self.storage[id]
