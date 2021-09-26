@@ -101,7 +101,7 @@ async def handle_cancel_event(request):
     """
     try:
         server = request.app["server"]
-        server.cancel_event(ven_id='ven_id_dan_test',
+        server.cancel_event(ven_id='ven_id_ben_house',
             event_id="our-event-id",
         )
 
@@ -132,9 +132,9 @@ async def handle_trigger_event(request):
         duration = request.match_info['minutes_duration']
         
         server = request.app["server"]
-        server.add_event(ven_id='ven_id_dan_test',
-            signal_name='LOAD_CONTROL',
-            signal_type='x-loadControlCapacity',
+        server.add_event(ven_id='ven_id_ben_house',
+            signal_name='SIMPLE',
+            signal_type='level',
             intervals=[{'dtstart': datetime.now(timezone.utc),
                         'duration': timedelta(minutes=int(duration)),
                         'signal_payload': 1.0}],
